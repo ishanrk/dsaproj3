@@ -16,11 +16,12 @@ class Hash:
         val = sum(ord(char) for char in word) % self.max
         return val + 1
 
-max_hash = 100000
-hash= Hash(max_hash)
-
-string = input("Enter a sentence to hash: ")
-number_set = hash.hash(string)
-
-print("Hash values corresponding to each word in the input string:")
-print(number_set)
+def test():
+    max_hash = 100000
+    hash= Hash(max_hash)
+    
+    string = input("Enter a sentence to hash: ")
+    number_set = hash.hash(string)
+    
+    print("Hash values corresponding to each word in the input string:")
+    print(number_set)
