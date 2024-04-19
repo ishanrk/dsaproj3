@@ -22,7 +22,7 @@ def genNeuronsV1(num_of_neurons : int, num_of_regions : int = 8, max_connection_
     choices = np.arange(num_of_neurons)
 
     for i in range(num_of_neurons):
-        connections[i] = np.random.choice(choices, max_adjacent if bench_mark else np.random.randint(max_adjacent))
+        connections[i] = np.random.choice(choices, max_adjacent if bench_mark else np.random.randint(max_adjacent), replace=False)
 
     return np.array([regions, connection_bias, error_bias, connections])
 
@@ -37,7 +37,7 @@ def genNeuronsV2(num_of_neurons : int, num_of_regions : int = 8, max_connection_
     choices = np.arange(num_of_neurons)
 
     for i in range(num_of_neurons):
-        connections[i] = np.random.choice(choices, max_adjacent if bench_mark else np.random.randint(max_adjacent))
+        connections[i] = np.random.choice(choices, max_adjacent if bench_mark else np.random.randint(max_adjacent), replace=False)
 
     return np.array((regions, connection_bias, error_bias, connections))
 
@@ -52,7 +52,7 @@ def genNeuronsV3(num_of_neurons : int, num_of_regions : int = 8, max_connection_
     choices = np.arange(num_of_neurons)
 
     for i in range(num_of_neurons):
-        connections[i] = np.random.choice(choices, max_adjacent if bench_mark else np.random.randint(max_adjacent))
+        connections[i] = np.random.choice(choices, max_adjacent if bench_mark else np.random.randint(max_adjacent), replace=False)
 
     ret = np.empty(4, dtype=object)
 
