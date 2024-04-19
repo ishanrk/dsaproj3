@@ -2,14 +2,10 @@ import numpy as np
 import heapq
 from graph import Graph, DNode
 
-<<<<<<< HEAD
 def weightfunc(e1 : float, c1 : float, e2 : float, c2 : float):
     return (e1+e2)**2 + (c1*(1 - c2))
 
 def dijkstra(source : int, graph : Graph, weightfunc = weightfunc):
-=======
-def dijkstra(source : int, graph : Graph, weightfunc):
->>>>>>> d18c59d380265144ce78057d3414e8e20c9c1ce9
     """
     Computes shortest path from source to all reachable nodes.
 
@@ -66,11 +62,7 @@ def dijkstra(source : int, graph : Graph, weightfunc):
 
     return (nprev, ndist)
 
-<<<<<<< HEAD
-def getPath(source : int, dest :int, graph : Graph, weightfunc) -> list[int]:
-=======
-def getPath(source : int, dest :int, graph : Graph, weightfunc = lambda a, b, c, d : abs(a+b+c+d)) -> list[int]:
->>>>>>> d18c59d380265144ce78057d3414e8e20c9c1ce9
+def getPath(source : int, dest :int, graph : Graph, weightfunc = weightfunc) -> list[int]:
     """
     Computes shortest path from source to destination. Under the hood, this function
     uses Dijkstra's shortest path algorithim. If you plan to compute multiple shortest 
@@ -87,4 +79,3 @@ def getPath(source : int, dest :int, graph : Graph, weightfunc = lambda a, b, c,
             path.append(prev[path[len(path) - 1]])
 
         return path[::-1]
-
