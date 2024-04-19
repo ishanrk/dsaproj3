@@ -11,8 +11,8 @@ field_to_index["location"] = 3
 field_to_index["connections"] = 4
 
 
-# Base W/ list
 def genNeuronsV1(num_of_neurons : int, num_of_regions : int = 8, max_connection_bias : float = 1.0, max_error : float = 0.2, max_adjacent : int = 500, bench_mark : bool = False):
+    """Generates dataset of neurons returns a list with data."""
 
     regions = np.random.randint(0, num_of_regions, num_of_neurons)
     connection_bias = np.random.rand(num_of_neurons) * max_connection_bias
@@ -26,8 +26,8 @@ def genNeuronsV1(num_of_neurons : int, num_of_regions : int = 8, max_connection_
 
     return np.array([regions, connection_bias, error_bias, connections])
 
-# W/ tuple
 def genNeuronsV2(num_of_neurons : int, num_of_regions : int = 8, max_connection_bias : float = 1.0, max_error : float = 0.2, max_adjacent : int = 500, bench_mark : bool = False):
+    """Generates dataset of neurons returns a tuple with data."""
 
     regions = np.random.randint(0, num_of_regions, num_of_neurons)
     connection_bias = np.random.rand(num_of_neurons) * max_connection_bias
@@ -41,8 +41,8 @@ def genNeuronsV2(num_of_neurons : int, num_of_regions : int = 8, max_connection_
 
     return np.array((regions, connection_bias, error_bias, connections))
 
-# W/ empty
 def genNeuronsV3(num_of_neurons : int, num_of_regions : int = 8, max_connection_bias : float = 1.0, max_error : float = 0.2, max_adjacent : int = 500, bench_mark : bool = False):
+    """Generates dataset of neurons returns a np.array with data."""
 
     regions = np.random.randint(0, num_of_regions, num_of_neurons)
     connection_bias = np.random.rand(num_of_neurons) * max_connection_bias
