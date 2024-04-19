@@ -3,6 +3,17 @@ import heapq
 from graph import Graph, DNode
 
 def dijkstra(source : int, graph : Graph, weightfunc):
+    """
+    Computes shortest path from source to all reachable nodes.
+
+    Returns a tuple containing two numpy.array.
+
+    The first array represents the predecessor of node n in the shortest path,
+    where n is the index of the node.
+
+    The second array represents the shortest distance from source to node n. 
+    """
+
     nset = np.zeros(graph.num_of_neurons, dtype=bool)
     ndist = np.full(graph.num_of_neurons, float("inf"))
     nprev = np.full(graph.num_of_neurons, -1)
@@ -49,6 +60,11 @@ def dijkstra(source : int, graph : Graph, weightfunc):
     return (nprev, ndist)
 
 def getPath(source : int, dest :int, graph : Graph, weightfunc = lambda a, b, c, d : abs(a+b+c+d)) -> list[int]:
+    """
+    Computes shortest path from source to destination. Under the hood, this function
+    uses Dijkstra's shortest path algorithim. If you plan to compute multiple shortest 
+    paths from a given node n, use the dijkstra method in this same package instead.
+    """
     (prev, _) = dijkstra(source, graph, weightfunc)
     if(prev[dest] == -1):
         return [-1]

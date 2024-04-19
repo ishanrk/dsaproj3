@@ -1,4 +1,5 @@
 import data.neuron_gen as ng
+import json
 
 class Node:
     def __init__(self, index : int, region : int, connection_bias : float, error_bias : float, adjacencyList):
@@ -52,6 +53,18 @@ class Graph:
     def printAdjList(self):
         for i in range(self.num_of_neurons):
             print(self.__getitem__(i))
+
+    def toJson(self, fileName):
+
+        with open(fileName, 'w') as f:
+            l = self._graph.tolist();
+            for i in range(len(l)):
+                l[i] = l[i].tolist()
+            for i in range(len(l[3])):
+                l[3][i] = l[3][i].tolist();
+
+            j = {'Graph' : l}
+            json.dump(j, f)
 
     def __repr__(self):
         return "Graph(num_of_neurons={}, num_of_regions={}, max_connection_bias={}, max_error={}, max_adjacent={})\nTotal Edges: {}".format(self.num_of_neurons, self.num_of_regions, self.max_connection_bias, self.max_error, self.max_adjacent, self.getNumberOfEdges())
