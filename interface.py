@@ -91,6 +91,87 @@ def generate_subset_neurons(subset_number):
 
     return neuron_list
 
+def breadth_first_search(from_neuron, to_neuron, neurons, screen):
+
+    visited={}
+
+    queue_python_impl=[from_neuron]
+
+    draw_edges=[]
+    prev={}
+    while(len(queue_python_impl)!=0):
+
+        curr_neuron = queue_python_impl.pop()
+        visited[curr_neuron]=1
+        
+        draw_edges.append(curr_neuron)
+        screen.fill((230, 230, 255))
+        screen.blit(BACK_IMAGE,(0,0))
+
+        neurons[curr_neuron].selected=True
+        
+        for neuron in neurons.values():
+            
+            if neuron.selected==False:
+                if(neuron.location=="occipital_lobe"):
+                    pygame.draw.circle(screen, YELLOW, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                if(neuron.location=="temporal_lobe"):
+                    pygame.draw.circle(screen, GREEN, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                if(neuron.location=="parietal_lobe"):
+                    pygame.draw.circle(screen, PINK, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                if(neuron.location=="frontal_lobe"):
+                    pygame.draw.circle(screen, RED, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+            else:
+                pygame.draw.circle(screen, GRAY, (neuron.x_coord,neuron.y_coord), 10)
+            
+        print("this happen")
+        
+        for connection in neurons[curr_neuron].connections:
+            if(connection not in visited.keys()):
+                queue_python_impl.append(connection)
+                prev[connection]=curr_neuron
+            if(connection==to_neuron):
+                path=[]
+                temp_neuron=connection
+                
+                while(temp_neuron!=from_neuron):
+                    path.append(temp_neuron)
+                    last_neuron=temp_neuron
+                    pygame.draw.circle(screen, RED, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord), 10)
+                    temp_neuron=prev[temp_neuron]
+                    pygame.draw.circle(screen, RED, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord), 10)
+                    pygame.display.flip()
+                    pygame.draw.line(screen, RED, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord),(neurons[last_neuron].x_coord,neurons[last_neuron].y_coord), 5)
+                    
+                    time.sleep(0.05)
+                path.append(from_neuron)
+                pygame.display.flip()
+                screen.fill((230, 230, 255))
+                screen.blit(BACK_IMAGE,(0,0))
+                return path
+
+       
+                        
+            
+        for neuron in draw_edges:
+            print(neuron)
+            for connection in neurons[neuron].connections:
+                
+                pygame.draw.line(screen, WHITE, (neurons[neuron].x_coord,neurons[neuron].y_coord), (neurons[connection].x_coord, neurons[connection].y_coord), 1)
+        
+        time.sleep(0.1)
+        pygame.display.flip()
+        
+        
+
+
+
+
+
+
+
+
+
 
 def find_closest_neighbors(nodes):
     for node in nodes.values():
@@ -130,16 +211,16 @@ def astar(start_index, goal_index, neurons, screen):
             
             if neuron.selected==False:
                 if(neuron.location=="occipital_lobe"):
-                    pygame.draw.circle(screen, YELLOW, (neuron.x_coord,neuron.y_coord), neuron.neuron_size*2)
+                    pygame.draw.circle(screen, YELLOW, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
                 if(neuron.location=="temporal_lobe"):
-                    pygame.draw.circle(screen, GREEN, (neuron.x_coord,neuron.y_coord), neuron.neuron_size*2)
+                    pygame.draw.circle(screen, GREEN, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
                 if(neuron.location=="parietal_lobe"):
-                    pygame.draw.circle(screen, PINK, (neuron.x_coord,neuron.y_coord), neuron.neuron_size*2)
+                    pygame.draw.circle(screen, PINK, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
                 if(neuron.location=="frontal_lobe"):
-                    pygame.draw.circle(screen, RED, (neuron.x_coord,neuron.y_coord), neuron.neuron_size*2)
+                    pygame.draw.circle(screen, RED, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
             else:
-                pygame.draw.circle(screen, GRAY, (neuron.x_coord,neuron.y_coord), neuron.neuron_size*2)
-        pygame.draw.circle(screen, GRAY, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), neur)
+                pygame.draw.circle(screen, GRAY, (neuron.x_coord,neuron.y_coord), 10)
+        pygame.draw.circle(screen, GRAY, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), 10)
 
         if current_neuron == goal_index:
             # Reconstruct path
@@ -171,16 +252,12 @@ def astar(start_index, goal_index, neurons, screen):
                 visited[neighbor] = tentative_g_score
                 f_score = tentative_g_score + get_weight(neurons[neighbor], neurons[goal_index])
                 heapq.heappush(open_nodes, (f_score, neighbor)) 
-        time.sleep(0.05)
+        time.sleep(0.01)
         pygame.display.flip()
 
 def main2():
-    neurons = generate_subset_neurons(50)
+    neurons = generate_subset_neurons(500)
     pos_dict={}
-
-    
-
-    
 
     for neuron in neurons.values():
         if(neuron.location=="occipital_lobe"):
@@ -272,7 +349,8 @@ def main2():
                             break
         path=[]  
         if start_index!=None and goal_index!= None:
-            path=astar(start_index,goal_index,neurons,screen)
+            #path=astar(start_index,goal_index,neurons,screen)
+            path = breadth_first_search(start_index, goal_index, neurons,screen)
             time.sleep(2)
             print("hm")
             break
@@ -281,13 +359,13 @@ def main2():
             
             if neuron.selected==False:
                 if(neuron.location=="occipital_lobe"):
-                    pygame.draw.circle(screen, YELLOW, (neuron.x_coord,neuron.y_coord), neuron.neuron_size*2)
+                    pygame.draw.circle(screen, YELLOW, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
                 if(neuron.location=="temporal_lobe"):
-                    pygame.draw.circle(screen, GREEN, (neuron.x_coord,neuron.y_coord), neuron.neuron_size*2)
+                    pygame.draw.circle(screen, GREEN, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
                 if(neuron.location=="parietal_lobe"):
-                    pygame.draw.circle(screen, PINK, (neuron.x_coord,neuron.y_coord), neuron.neuron_size*2)
+                    pygame.draw.circle(screen, PINK, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
                 if(neuron.location=="frontal_lobe"):
-                    pygame.draw.circle(screen, RED, (neuron.x_coord,neuron.y_coord), neuron.neuron_size*2)
+                    pygame.draw.circle(screen, RED, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
                 if len(path)!=0:
                     x=0
                     while(x<len(path)-1):
