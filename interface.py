@@ -4,8 +4,9 @@ import heapq
 import math
 import time
 import pandas as pd
+from neuron_gen import genNeuronsV3
 
-# Define colors
+# get colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 GRAY = (200, 200, 200)
@@ -17,11 +18,26 @@ PINK=(255,192,203)
 RED=(255,0,0)
 
 
-BACK_IMAGE= pygame.image.load("brain2.png")
+BACK_IMAGE= pygame.image.load("brain2.png") # brain image as bg
 
 
+# gets data from neuron_gen, saves a local copy
+def get_data():
+    neurons = genNeuronsV3(num_of_neurons=100000, num_of_regions=4) # gets data from neuron_gen
 
+    indices = range(0,100000)
+    location = neurons[0].to_list()
+    connection_bias = neurons[1].to_list()
+    error = neurons[2].to_list()
+    connections=[]
+    for connection in neurons[3]:
+        connections.append(connection.to_list())
 
+    neuron_size = [random.randint(1,3) for x in range(100000)]
+    neurons_dataframe= pd.DataFrame({'index': indices, 'location':location,'connection_bias':connection_bias, 'error':error,'neruon_size':neuron_size})
+    neurons_dataframe.to_json('data.json')
+
+# function to convert df into set of rows
 def row_to_neuron(row):
     return {
         "index": row["index"],
@@ -31,6 +47,8 @@ def row_to_neuron(row):
         "neuron_size": row["neuron_size"],
         "connections": row["connections"]
     }
+
+#all attributes of the neuron onscreen
 class Neuron:
     def __init__(self, neuron_dict):
         self.index = neuron_dict["index"]
@@ -41,7 +59,7 @@ class Neuron:
         self.connections = []
         self.x_coord = 0
         self.y_coord = 0
-        self.color = YELLOW
+        self.color=YELLOW
         self.selected=False
 
     def set_x(self, x):
@@ -53,29 +71,32 @@ class Neuron:
     def connection_add(self, neuron_index):
         self.connections.append(neuron_index)
 
-
-
+# randomly samples subset_number of neurons from total dataset
 def generate_subset_neurons(subset_number):
+    # read data
     neuron_dataframe = pd.read_json('data.json')
     neurons = [row_to_neuron(row) for _, row in neuron_dataframe.iterrows()]
-    print(len(neurons))
+
+    # uses set to store subset neurons
     in_graph=[]
     in_graph = set(in_graph)
     first_neuron = neurons[random.randint(0,100000)]
     in_graph.add(first_neuron["index"])
 
     current_Subset_lenght = 1
-    random.seed(422) #random seed
+    random.seed(422) #random seed, hint:submission date!
 
+    # generates subset 
     while(current_Subset_lenght!=subset_number):
         random_neuron = neurons[random.randint(0,99999)]
         if random_neuron["index"] not in in_graph:
             in_graph.add(random_neuron["index"])
             current_Subset_lenght+=1
 
-    print("debug")
+    # neuron map
     neuron_list={}
     
+    # goes thorugh each in_graph neuron to create a Neuron object
     in_graph = list(in_graph)
     for neuron in in_graph:
         num_edges = random.randint(1,2)
@@ -84,8 +105,7 @@ def generate_subset_neurons(subset_number):
         while(x!=num_edges):
             random_neuron = in_graph[random.randint(0,len(in_graph)-1)]
             if(random_neuron!=neuron):
-                x+=1
-                
+                x+=1     
                 new_neuron.connection_add(random_neuron)
         neuron_list[new_neuron.index] = new_neuron
 
@@ -159,47 +179,37 @@ def breadth_first_search(from_neuron, to_neuron, neurons, screen):
                 
                 pygame.draw.line(screen, WHITE, (neurons[neuron].x_coord,neurons[neuron].y_coord), (neurons[connection].x_coord, neurons[connection].y_coord), 1)
         
-        time.sleep(0.1)
+        time.sleep(0.01)
         pygame.display.flip()
         
-        
 
-
-
-
-
-
-
-
-
-
-def find_closest_neighbors(nodes):
+def close_connections(nodes):
     for node in nodes.values():
-        # Calculate distances to all other nodes
+        # calc eucleadean distances to all other nodes
         distances = []
         for other_node in nodes.values():
             if other_node != node:
                 distance = math.sqrt((other_node.x_coord - node.x_coord) ** 2 + (other_node.y_coord - node.y_coord) ** 2)
                 distances.append((other_node.index, distance))
         
-        # Sort distances by distance
+        # get lowest 2 distances and then add them to connections
         distances.sort(key=lambda x: x[1])
-        
-        # Add the two closest neighbors to the connections attribute
         for neighbor, _ in distances[:2]:
             node.connections.append(neighbor)
+
+# gets weight from connection bias, lower weight=lower speed to traverse
 def get_weight(a,b):
     return 100*((1-a.connection_bias)*(1-b.connection_bias))
 
+
+# currently heurisitc is 0
 def astar(start_index, goal_index, neurons, screen):
 
-    
-
-    # Priority queue to store open nodes
+    # gets nodes still in queue
     open_nodes = [(0, start_index)]
     heapq.heapify(open_nodes)
 
-    # Dict to track visited nodes and their costs
+    # dict to track visited nodes and their costs
     visited = {start_index: 0}
     parent = {}
 
@@ -246,16 +256,17 @@ def astar(start_index, goal_index, neurons, screen):
 
         for neighbor in neurons[current_neuron].connections:
             pygame.draw.line(screen, GRAY, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), (neurons[neighbor].x_coord,neurons[neighbor].y_coord), 1)
-            tentative_g_score = visited[current_neuron] + 1
-            if tentative_g_score < visited.get(neighbor, float('inf')):
+            score = visited[current_neuron] + 1
+            if score < visited.get(neighbor, float('inf')):
                 parent[neighbor] = current_neuron
-                visited[neighbor] = tentative_g_score
-                f_score = tentative_g_score + get_weight(neurons[neighbor], neurons[goal_index])
+                visited[neighbor] = score
+                f_score = score + get_weight(neurons[neighbor], neurons[goal_index])
                 heapq.heappush(open_nodes, (f_score, neighbor)) 
         time.sleep(0.01)
         pygame.display.flip()
 
-def main2():
+
+def main():
     neurons = generate_subset_neurons(500)
     pos_dict={}
 
@@ -311,7 +322,7 @@ def main2():
             neuron.set_x(x_loc)
             neuron.set_y(y_loc)
 
-    find_closest_neighbors(neurons)
+    close_connections(neurons)
 
     for neuron in neurons.values():
         pos_dict[neuron.index] = (neuron.x_coord,neuron.y_coord)
@@ -349,8 +360,8 @@ def main2():
                             break
         path=[]  
         if start_index!=None and goal_index!= None:
-            #path=astar(start_index,goal_index,neurons,screen)
-            path = breadth_first_search(start_index, goal_index, neurons,screen)
+            path=astar(start_index,goal_index,neurons,screen)
+            #path = breadth_first_search(start_index, goal_index, neurons,screen)
             time.sleep(2)
             print("hm")
             break
@@ -385,9 +396,6 @@ def main2():
 
 
 
-
-
-# Define node class
-
-
-main2()
+#run
+if __name__ == "__main__":
+    main()
