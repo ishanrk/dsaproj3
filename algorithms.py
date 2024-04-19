@@ -48,12 +48,12 @@ def dijkstra(source : int, graph : Graph, weightfunc):
 
     return (nprev, ndist)
 
-def getPath(source : int, dest :int, graph : Graph):
-    (prev, _) = dijkstra(source, graph, lambda a, b, c, d : abs(a+b+c+d))
+def getPath(source : int, dest :int, graph : Graph, weightfunc = lambda a, b, c, d : abs(a+b+c+d)) -> list[int]:
+    (prev, _) = dijkstra(source, graph, weightfunc)
     if(prev[dest] == -1):
-        return -1
+        return [-1]
     elif(prev[dest] == -2):
-        return -2
+        return [-2]
     else:
         path = [dest, prev[dest]]
         while prev[path[len(path) - 1]] != -2:
