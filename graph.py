@@ -43,13 +43,21 @@ class GraphFromJson:
             self._graph = json.load(f)
         self.num_of_neurons = len(self._graph)
 
+    def __getitem__(self, key : int):
+        node = self._graph[str(key)]
+        return Node(key, node[self.mapper("region")], node[self.mapper("neuron_size")], node[self.mapper("connection_bias")], node[self.mapper("error_bias")], node[self.mapper("adjacency_list")])
+    
+    def __iter__(self):
+         return iter(self._graph)
+
+    def __len__(self):
+         return len(self._graph)
+
     def mapper(self, property : str):
          """Maps user property to standard property specified in JSON format."""
          return self.property_mapper[property] if self.property_mapper else property
 
-    def __getitem__(self, key : int):
-        node = self._graph[str(key)]
-        return Node(key, node[self.mapper("region")], node[self.mapper("neuron_size")], node[self.mapper("connection_bias")], node[self.mapper("error_bias")], node[self.mapper("adjacency_list")])
+
 
     def getAdjacencyListOf(self, key):
         node = self._graph[str(key)]
@@ -68,7 +76,7 @@ class GraphFromJson:
         return node[self.mapper("region")]
 
     def getAdjacencyList(self):
-        return {x : self._graph[x][self.mapper("adjacency_list")] for x in self._graph}
+        return {int(x) : self._graph[x][self.mapper("adjacency_list")] for x in self._graph}
 
     def getNumberOfEdges(self):
         s = 0
