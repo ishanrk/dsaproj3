@@ -5,6 +5,9 @@ import math
 import time
 import pandas as pd
 from neuron_gen import genNeuronsV3
+import json
+
+from hash import Hash
 
 # get colors
 WHITE = (255, 255, 255)
@@ -114,7 +117,7 @@ def generate_subset_neurons(subset_number):
 
     return neuron_list
 
-def breadth_first_search(from_neuron, to_neuron, neurons, screen, bfs_button, generate_text2):
+def breadth_first_search(from_neuron, to_neuron, neurons, screen, bfs_button, generate_text2, num_neurons):
 
     visited={}
 
@@ -122,72 +125,128 @@ def breadth_first_search(from_neuron, to_neuron, neurons, screen, bfs_button, ge
 
     draw_edges=[]
     prev={}
-    while(len(queue_python_impl)!=0):
+    if num_neurons<=1000:
+        while(len(queue_python_impl)!=0):
 
-        curr_neuron = queue_python_impl.pop()
-        visited[curr_neuron]=1
+            curr_neuron = queue_python_impl.pop()
+            visited[curr_neuron]=1
+            
+            draw_edges.append(curr_neuron)
+            screen.fill((230, 230, 255))
+            screen.blit(BACK_IMAGE,(0,0))
+            pygame.draw.rect(screen, RED, bfs_button)
+            screen.blit(generate_text2, (930, 70))
+
+            neurons[curr_neuron].selected=True
+            
+            
+            for neuron in neurons.values():
+                
+                if neuron.selected==False:
+                    if(neuron.location=="occipital_lobe"):
+                        pygame.draw.circle(screen, YELLOW, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                    if(neuron.location=="temporal_lobe"):
+                        pygame.draw.circle(screen, GREEN, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                    if(neuron.location=="parietal_lobe"):
+                        pygame.draw.circle(screen, PINK, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                    if(neuron.location=="frontal_lobe"):
+                        pygame.draw.circle(screen, RED, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                else:
+                    pygame.draw.circle(screen, GRAY, (neuron.x_coord,neuron.y_coord), 8)
+                
+            
+            for connection in neurons[curr_neuron].connections:
+                if(connection not in visited.keys()):
+                    queue_python_impl.append(connection)
+                    prev[connection]=curr_neuron
+                if(connection==to_neuron):
+                    path=[]
+                    temp_neuron=connection
+                    
+                    while(temp_neuron!=from_neuron):
+                        path.append(temp_neuron)
+                        last_neuron=temp_neuron
+                        pygame.draw.circle(screen, RED, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord), 10)
+                        temp_neuron=prev[temp_neuron]
+                        pygame.draw.circle(screen, RED, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord), 10)
+                        pygame.display.flip()
+                        pygame.draw.line(screen, RED, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord),(neurons[last_neuron].x_coord,neurons[last_neuron].y_coord), 2)
+                        
+                        time.sleep(0.05)
+                    path.append(from_neuron)
+                    pygame.display.flip()
+                    screen.fill((230, 230, 255))
+                    screen.blit(BACK_IMAGE,(0,0))
+                    for neuron in neurons:
+                        if neurons[neuron].selected==True:
+                            neurons[neuron].selected=False
+                    return path
+            for neuron in draw_edges:
+            
+                for connection in neurons[neuron].connections:
+                
+                    pygame.draw.line(screen, WHITE, (neurons[neuron].x_coord,neurons[neuron].y_coord), (neurons[connection].x_coord, neurons[connection].y_coord), 1)
         
-        draw_edges.append(curr_neuron)
+            time.sleep(0.01)
+            pygame.display.flip()
+    else:
         screen.fill((230, 230, 255))
         screen.blit(BACK_IMAGE,(0,0))
         pygame.draw.rect(screen, RED, bfs_button)
         screen.blit(generate_text2, (930, 70))
-
-        neurons[curr_neuron].selected=True
-        
         for neuron in neurons.values():
-            
-            if neuron.selected==False:
-                if(neuron.location=="occipital_lobe"):
-                    pygame.draw.circle(screen, YELLOW, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
-                if(neuron.location=="temporal_lobe"):
-                    pygame.draw.circle(screen, GREEN, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
-                if(neuron.location=="parietal_lobe"):
-                    pygame.draw.circle(screen, PINK, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
-                if(neuron.location=="frontal_lobe"):
-                    pygame.draw.circle(screen, RED, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
-            else:
-                pygame.draw.circle(screen, GRAY, (neuron.x_coord,neuron.y_coord), 10)
-            
-        print("this happen")
-        
-        for connection in neurons[curr_neuron].connections:
-            if(connection not in visited.keys()):
-                queue_python_impl.append(connection)
-                prev[connection]=curr_neuron
-            if(connection==to_neuron):
-                path=[]
-                temp_neuron=connection
                 
-                while(temp_neuron!=from_neuron):
-                    path.append(temp_neuron)
-                    last_neuron=temp_neuron
-                    pygame.draw.circle(screen, RED, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord), 10)
-                    temp_neuron=prev[temp_neuron]
-                    pygame.draw.circle(screen, RED, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord), 10)
-                    pygame.display.flip()
-                    pygame.draw.line(screen, RED, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord),(neurons[last_neuron].x_coord,neurons[last_neuron].y_coord), 5)
-                    
-                    time.sleep(0.05)
-                path.append(from_neuron)
-                pygame.display.flip()
-                screen.fill((230, 230, 255))
-                screen.blit(BACK_IMAGE,(0,0))
-                for neuron in neurons:
-                    if neurons[neuron].selected==True:
-                        neurons[neuron].selected=False
-                return path
+                if neuron.selected==False:
+                    if(neuron.location=="occipital_lobe"):
+                        pygame.draw.circle(screen, YELLOW, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                    if(neuron.location=="temporal_lobe"):
+                        pygame.draw.circle(screen, GREEN, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                    if(neuron.location=="parietal_lobe"):
+                        pygame.draw.circle(screen, PINK, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                    if(neuron.location=="frontal_lobe"):
+                        pygame.draw.circle(screen, RED, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                else:
+                    pygame.draw.circle(screen, GRAY, (neuron.x_coord,neuron.y_coord), 10)
+        while(len(queue_python_impl)!=0):
 
-       
-                        
+            curr_neuron = queue_python_impl.pop()
+            visited[curr_neuron]=1
             
-        for neuron in draw_edges:
-            print(neuron)
-            for connection in neurons[neuron].connections:
-                
-                pygame.draw.line(screen, WHITE, (neurons[neuron].x_coord,neurons[neuron].y_coord), (neurons[connection].x_coord, neurons[connection].y_coord), 1)
+            draw_edges.append(curr_neuron)
+            
+
+            
+            
+            for connection in neurons[curr_neuron].connections:
+                if(connection not in visited.keys()):
+                    queue_python_impl.append(connection)
+                    prev[connection]=curr_neuron
+                if(connection==to_neuron):
+                    path=[]
+                    temp_neuron=connection
+                    
+                    while(temp_neuron!=from_neuron):
+                        path.append(temp_neuron)
+                        last_neuron=temp_neuron
+                        pygame.draw.circle(screen, GRAY, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord), 8)
+                        temp_neuron=prev[temp_neuron]
+                        pygame.draw.circle(screen, GRAY, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord), 8)
+                        pygame.display.flip()
+                        pygame.draw.line(screen, WHITE, (neurons[temp_neuron].x_coord,neurons[temp_neuron].y_coord),(neurons[last_neuron].x_coord,neurons[last_neuron].y_coord), 3)
+                        
+                        
+                    path.append(from_neuron)
+                    pygame.display.flip()
+                    time.sleep(3)
+                    screen.fill((230, 230, 255))
+                    screen.blit(BACK_IMAGE,(0,0))
+                    for neuron in neurons:
+                        if neurons[neuron].selected==True:
+                            neurons[neuron].selected=False
+                    return path
+
         
-        time.sleep(0.01)
+       
         pygame.display.flip()
         
 
@@ -205,24 +264,119 @@ def close_connections(nodes):
         for neighbor, _ in distances[:2]:
             node.connections.append(neighbor)
 
+
+def raw_astar(from_neuron, to_neuron, neurons):
+        
+        start_time= time.time_ns()
+        neuron_priority_q = [(0, from_neuron)]
+        heapq.heapify(neuron_priority_q)
+
+            # dict to track visited nodes and their costs
+        visited = {from_neuron: 0}
+        parent = {}
+        
+        while neuron_priority_q:
+            
+            temp, current_neuron = heapq.heappop(neuron_priority_q) 
+           
+
+            if current_neuron == to_neuron:
+                
+                # Reconstruct path
+                path = []
+                
+                last_neuron=0
+                while current_neuron in parent:
+                    
+                    path.append(current_neuron)
+                    
+                    last_neuron=current_neuron
+                    current_neuron = parent[current_neuron]      
+                path.append(from_neuron)
+              
+                return path[::-1]
+
+            for neighbor in neurons[current_neuron].connections:
+                
+                score = visited[current_neuron] + get_weight(neurons[current_neuron], neurons[neighbor])
+                if score < visited.get(neighbor, float('inf')):
+                    parent[neighbor] = current_neuron
+                    visited[neighbor] = score
+                    combined_heuristic_score = score + get_weight(neurons[neighbor], neurons[to_neuron])
+                    heapq.heappush(neuron_priority_q, (combined_heuristic_score, neighbor)) 
+
+            
 # gets weight from connection bias, lower weight=lower speed to traverse
 def get_weight(a,b):
     return 100*((1-a.connection_bias)*(1-b.connection_bias))
 
 
 # currently heurisitc is 0
-def astar(start_index, goal_index, neurons, screen, astar_button, generate_text):
+def astar(from_neuron, to_neuron, neurons, screen, astar_button, generate_text, num_neuron):
 
     # gets nodes still in queue
-    open_nodes = [(0, start_index)]
-    heapq.heapify(open_nodes)
+    neuron_priority_q = [(0, from_neuron)]
+    heapq.heapify(neuron_priority_q)
 
     # dict to track visited nodes and their costs
-    visited = {start_index: 0}
+    visited = {from_neuron: 0}
     parent = {}
+    if num_neuron<=1000:
 
-    while open_nodes:
-        _, current_neuron = heapq.heappop(open_nodes)
+        while neuron_priority_q:
+            _, current_neuron = heapq.heappop(neuron_priority_q)
+            screen.fill((230, 230, 255))
+            screen.blit(BACK_IMAGE,(0,0))
+            pygame.draw.rect(screen, RED, astar_button)
+            screen.blit(generate_text, (80, 70))
+            for neuron in neurons.values():
+                
+                if neuron.selected==False:
+                    if(neuron.location=="occipital_lobe"):
+                        pygame.draw.circle(screen, YELLOW, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                    if(neuron.location=="temporal_lobe"):
+                        pygame.draw.circle(screen, GREEN, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                    if(neuron.location=="parietal_lobe"):
+                        pygame.draw.circle(screen, PINK, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                    if(neuron.location=="frontal_lobe"):
+                        pygame.draw.circle(screen, RED, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
+                else:
+                    pygame.draw.circle(screen, GRAY, (neuron.x_coord,neuron.y_coord), 10)
+            pygame.draw.circle(screen, GRAY, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), 10)
+
+            if current_neuron == to_neuron:
+                # Reconstruct path
+                path = []
+                
+                last_neuron=0
+                while current_neuron in parent:
+                   
+                    path.append(current_neuron)
+                    pygame.draw.circle(screen, RED, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), 10)
+                    pygame.draw.line(screen, RED, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), (neurons[parent[current_neuron]].x_coord, neurons[parent[current_neuron]].y_coord), 5)
+                    pygame.display.flip()
+                    last_neuron=current_neuron
+                    current_neuron = parent[current_neuron]
+                    time.sleep(1)
+                pygame.draw.circle(screen, RED, (neurons[from_neuron].x_coord,neurons[from_neuron].y_coord), 10)
+                pygame.draw.line(screen, RED, (neurons[from_neuron].x_coord,neurons[from_neuron].y_coord), (neurons[path[::-1][0]].x_coord, neurons[path[::-1][0]].y_coord), 5)
+                pygame.display.flip()
+                time.sleep(5)
+                path.append(from_neuron)
+                
+                return path[::-1]
+
+            for neighbor in neurons[current_neuron].connections:
+                pygame.draw.line(screen, GRAY, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), (neurons[neighbor].x_coord,neurons[neighbor].y_coord), 1)
+                score = visited[current_neuron] + 1
+                if score < visited.get(neighbor, float('inf')):
+                    parent[neighbor] = current_neuron
+                    visited[neighbor] = score
+                    combined_heuristic_score = score + get_weight(neurons[neighbor], neurons[to_neuron])
+                    heapq.heappush(neuron_priority_q, (combined_heuristic_score, neighbor)) 
+            time.sleep(0.001)
+            pygame.display.flip()
+    else:
         screen.fill((230, 230, 255))
         screen.blit(BACK_IMAGE,(0,0))
         pygame.draw.rect(screen, RED, astar_button)
@@ -240,45 +394,49 @@ def astar(start_index, goal_index, neurons, screen, astar_button, generate_text)
                     pygame.draw.circle(screen, RED, (neuron.x_coord,neuron.y_coord), neuron.neuron_size)
             else:
                 pygame.draw.circle(screen, GRAY, (neuron.x_coord,neuron.y_coord), 10)
-        pygame.draw.circle(screen, GRAY, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), 10)
-
-        if current_neuron == goal_index:
-            # Reconstruct path
-            path = []
+        
+        while neuron_priority_q:
+            _, current_neuron = heapq.heappop(neuron_priority_q)
             
-            last_neuron=0
-            while current_neuron in parent:
-                print("happen")
-                path.append(current_neuron)
-                pygame.draw.circle(screen, RED, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), 10)
-                pygame.draw.line(screen, RED, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), (neurons[parent[current_neuron]].x_coord, neurons[parent[current_neuron]].y_coord), 5)
+
+            if current_neuron == to_neuron:
+                # Reconstruct path
+                path = []
+                
+                last_neuron=0
+                while current_neuron in parent:
+                    
+                    path.append(current_neuron)
+                    pygame.draw.circle(screen, GRAY, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), 8)
+                    pygame.draw.line(screen, WHITE, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), (neurons[parent[current_neuron]].x_coord, neurons[parent[current_neuron]].y_coord), 3)
+                    pygame.display.flip()
+                    last_neuron=current_neuron
+                    current_neuron = parent[current_neuron]
+                    time.sleep(0.01)
+                pygame.draw.circle(screen, GRAY, (neurons[from_neuron].x_coord,neurons[from_neuron].y_coord), 8)
+                pygame.draw.line(screen, WHITE, (neurons[from_neuron].x_coord,neurons[from_neuron].y_coord), (neurons[path[::-1][0]].x_coord, neurons[path[::-1][0]].y_coord), 3)
                 pygame.display.flip()
-                last_neuron=current_neuron
-                current_neuron = parent[current_neuron]
-                time.sleep(1)
-            pygame.draw.circle(screen, RED, (neurons[start_index].x_coord,neurons[start_index].y_coord), 10)
-            pygame.draw.line(screen, RED, (neurons[start_index].x_coord,neurons[start_index].y_coord), (neurons[path[::-1][0]].x_coord, neurons[path[::-1][0]].y_coord), 5)
-            pygame.display.flip()
-            time.sleep(5)
-            path.append(start_index)
-            print(path[::-1])
-            return path[::-1]
+                time.sleep(5)
+                path.append(from_neuron)
+              
+                return path[::-1]
 
-        for neighbor in neurons[current_neuron].connections:
-            pygame.draw.line(screen, GRAY, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), (neurons[neighbor].x_coord,neurons[neighbor].y_coord), 1)
-            score = visited[current_neuron] + 1
-            if score < visited.get(neighbor, float('inf')):
-                parent[neighbor] = current_neuron
-                visited[neighbor] = score
-                f_score = score + get_weight(neurons[neighbor], neurons[goal_index])
-                heapq.heappush(open_nodes, (f_score, neighbor)) 
-        time.sleep(0.001)
-        pygame.display.flip()
-
+            for neighbor in neurons[current_neuron].connections:
+                
+                score = visited[current_neuron] + 1
+                if score < visited.get(neighbor, float('inf')):
+                    parent[neighbor] = current_neuron
+                    visited[neighbor] = score
+                    combined_heuristic_score = score + get_weight(neurons[neighbor], neurons[to_neuron])
+                    heapq.heappush(neuron_priority_q, (combined_heuristic_score, neighbor)) 
+    
 
 def main():
-    neurons = generate_subset_neurons(500)
+    num_neurons = int(input("Enter number of neurons: "))
+    neurons = generate_subset_neurons(num_neurons)
     pos_dict={}
+    sentence = input("Enter your NAME: ")
+    
 
     for neuron in neurons.values():
         if(neuron.location=="occipital_lobe"):
@@ -332,7 +490,8 @@ def main():
             neuron.set_x(x_loc)
             neuron.set_y(y_loc)
 
-    close_connections(neurons)
+    if(num_neurons<5000):
+        close_connections(neurons)
 
     for neuron in neurons.values():
         pos_dict[neuron.index] = (neuron.x_coord,neuron.y_coord)
@@ -342,40 +501,64 @@ def main():
     screen = pygame.display.set_mode((1000, 834 ))
     pygame.display.set_caption("Brain Interface")
     font = pygame.font.SysFont(None, 24)
+    font2 = pygame.font.SysFont(None, 48)
     
 
     astar_chosen = False
     bfs_chosen=False
+    edge_display=False
+    name_func=False
 
     astar_button = pygame.Rect(50, 50, 100 , 70)
     generate_text = font.render("A Star", True, WHITE)
 
     bfs_button = pygame.Rect(900, 50, 100 , 70)
     generate_text2 = font.render("BFS", True, WHITE)
+
+    edge_button = pygame.Rect(50, 150, 100 , 70)
+    generate_text3 = font.render("Edge", True, WHITE)
+
+    name_button = pygame.Rect(900, 150, 100 , 70)
+    generate_text4 = font.render("Enter Name", True, BLACK)
     
-        
+    brain_text = font2.render("Brain Interface", True, WHITE)
     
     running = True
-    start_index=None
-    goal_index=None
+    from_neuron=None
+    to_neuron=None
     
     while running:
         screen.fill((230, 230, 255))
         screen.blit(BACK_IMAGE,(0,0))
         pygame.draw.rect(screen, GREEN, astar_button)
-        screen.blit(generate_text, (80, 70))
+        screen.blit(brain_text, (400, 70))
+        screen.blit(generate_text, (75, 80))
 
         pygame.draw.rect(screen, PINK, bfs_button)
-        screen.blit(generate_text2, (930, 70))
+        screen.blit(generate_text2, (932, 80))
+
+
+        pygame.draw.rect(screen, RED, edge_button)
+        screen.blit(generate_text3, (80, 175))
+
+        pygame.draw.rect(screen, YELLOW, name_button)
+        screen.blit(generate_text4, (905, 175))
 
         for event in pygame.event.get():
             mouse_pos = pygame.mouse.get_pos()
             if event.type == pygame.QUIT:
                 running = False
-            if event.type == pygame.MOUSEBUTTONDOWN and astar_button.collidepoint(mouse_pos) and start_index!=None and goal_index!=None:
+            if event.type == pygame.MOUSEBUTTONDOWN and astar_button.collidepoint(mouse_pos) and from_neuron!=None and to_neuron!=None:
                 astar_chosen=True
-            if event.type == pygame.MOUSEBUTTONDOWN and bfs_button.collidepoint(mouse_pos) and start_index!=None and goal_index!=None:
+            if event.type == pygame.MOUSEBUTTONDOWN and bfs_button.collidepoint(mouse_pos) and from_neuron!=None and to_neuron!=None:
                 bfs_chosen=True
+            if event.type == pygame.MOUSEBUTTONDOWN and name_button.collidepoint(mouse_pos):
+                name_func=True
+            if event.type == pygame.MOUSEBUTTONDOWN and edge_button.collidepoint(mouse_pos):
+                if edge_display: 
+                    edge_display=False
+                else:
+                    edge_display=True
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1: 
                              
                 for neuron in neurons.values():
@@ -383,33 +566,44 @@ def main():
                         if distance <= neuron.neuron_size*2:  
                             if neuron.selected: neuron.selected=False
                             else: neuron.selected=True
-                            if start_index is None:
-                                start_index = neuron.index
-                                print(start_index)
-                            elif goal_index is None:
-                                goal_index = neuron.index
-                                print(goal_index)
+                            if from_neuron is None:
+                                from_neuron= neuron.index
+                                
+                            elif to_neuron is None:
+                                to_neuron = neuron.index
+                               
                             break
         path=[]  
+        
+
+
+        
+
+            
+
         if astar_chosen:
-            path=astar(start_index,goal_index,neurons,screen, astar_button, generate_text)
-            #path = breadth_first_search(start_index, goal_index, neurons,screen)
+            path=astar(from_neuron,to_neuron,neurons,screen, astar_button, generate_text,num_neurons)
+            
             time.sleep(2)
-            neurons[start_index].selected=False
-            neurons[goal_index].selected=False
-            start_index=None
-            goal_index=None
-            print("hm")
+            neurons[from_neuron].selected=False
+            neurons[to_neuron].selected=False
+            from_neuron=None
+            to_neuron=None
+            start_time = time.time_ns()
+            raw_astar(from_neuron,to_neuron,neurons)
+            end_time= time.time_ns()
+
+            print("TIME TAKEN FOR A STAR IN NANOSECONDS: ", end_time-start_time)
             astar_chosen=False
             continue
         if bfs_chosen:
-            path = breadth_first_search(start_index, goal_index, neurons,screen, bfs_button, generate_text2)
+            path = breadth_first_search(from_neuron, to_neuron, neurons,screen, bfs_button, generate_text2,num_neurons)
             time.sleep(2)
-            neurons[start_index].selected=False
-            neurons[goal_index].selected=False
-            start_index=None
-            goal_index=None
-            print("hm")
+            neurons[from_neuron].selected=False
+            neurons[to_neuron].selected=False
+            from_neuron=None
+            to_neuron=None
+            
             bfs_chosen=False
             continue
             
@@ -427,8 +621,57 @@ def main():
                 
             else:
                 pygame.draw.circle(screen, GRAY, (neuron.x_coord,neuron.y_coord), neuron.neuron_size*2)
+            if edge_display:
+                for neuron in neurons.values():
+                    for connection in neuron.connections:
+                        pygame.draw.line(screen, WHITE, (neuron.x_coord,neuron.y_coord), (neurons[connection].x_coord, neurons[connection].y_coord), 1)
 
-        
+        if name_func:
+            
+
+            currentHasher = Hash(num_neurons)  #hash obj for the sentence
+            currentHasher.hash(sentence)
+
+            path_taken=[]
+
+            for word in currentHasher.map:
+                temp_itr=0
+                max_itr=currentHasher.map[word]
+                for neuron in neurons.values():
+                    if(temp_itr<max_itr):
+                        currentHasher.map[word]=neuron.index
+                    else:
+                        break
+                    temp_itr+=1
+            
+                path_taken.append(currentHasher.map[word])
+                print(word, " maps to neuron ", neurons[currentHasher.map[word]].index , " in the location ", neurons[currentHasher.map[word]].location)
+                pygame.draw.circle(screen, GRAY, ( neurons[currentHasher.map[word]].x_coord, neurons[currentHasher.map[word]].y_coord), 10)
+                pygame.display.flip()
+                time.sleep(3)
+                
+            print("LOADING PATH... ")
+
+            x=0
+            while(x<len(path_taken)-1):
+                curr_path = raw_astar(path_taken[x],path_taken[x+1],neurons)
+                y=0
+                while(y<len(curr_path)-1):
+                    pygame.draw.circle(screen, GRAY, (neurons[curr_path[y]].x_coord, neurons[curr_path[y]].y_coord), 8)
+                    pygame.draw.circle(screen, GRAY, (neurons[curr_path[y+1]].x_coord, neurons[curr_path[y+1]].y_coord), 8)
+                    pygame.draw.line(screen, WHITE, (neurons[curr_path[y]].x_coord, neurons[curr_path[y]].y_coord),  (neurons[curr_path[y+1]].x_coord, neurons[curr_path[y+1]].y_coord), 3)
+                    time.sleep(0.05)
+                    pygame.display.flip()
+                    y+=1
+                x+=1
+                print("PATH TAKEN FOR PROCESSING YOUR NAME IN BRAIN: ", curr_path)
+            pygame.display.flip()
+            time.sleep(3)
+           
+            name_func=False
+            continue
+
+            
         
         pygame.display.flip()
         clock.tick(60)
