@@ -1,6 +1,7 @@
 import numpy as np
 import heapq
 from graph import Graph, DNode
+from collections import deque
 
 def weightfunc(e1 : float, c1 : float, e2 : float, c2 : float):
     return (e1+e2)**2 + (c1*(1 - c2))
@@ -79,3 +80,18 @@ def getPath(source : int, dest :int, graph : Graph, weightfunc = weightfunc) -> 
             path.append(prev[path[len(path) - 1]])
 
         return path[::-1]
+
+def breadth_first_search(source: int, dest: int, graph: Graph) -> list[int]:
+    visited_nodes = set()
+    queue = deque([source, [source]])
+
+    while queue:
+        node, path = queue.popleft()
+        if node == dest:
+            return path
+        if node not in visited_nodes:
+            visited_nodes.add(node)
+            for next_node in graph.getAdjacencyListOf(node):
+                if next_node not in visited_nodes:
+                    queue.append((next_node, path + [next_node]))
+    return []
