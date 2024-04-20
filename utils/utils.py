@@ -15,4 +15,4 @@ Example:
 property_mapper = {"neuron_size" : "size", "adjacency_list" : "connections"}
 """
 
-ishan_to_std_json = {"region" : "location", "neuron_size" : "neuron_size", "connection_bias" : "connection_bias", "error_bias" : "error", "adjacency_list" : "connections"}
+fe_to_std_json = {"region" : "location", "neuron_size" : "neuron_size", "connection_bias" : "connection_bias", "error_bias" : "error", "adjacency_list" : "connections"}
