@@ -11,7 +11,7 @@ class Node:
         self.adjacency_list = adjacency_list
 
     def __repr__(self):
-        return "Node(index={}, region={}, neuron_size={}, connection_bias={}, error_bias={}, adjacencyList={})".format(self.index, self.region, self.neuron_size, self.connection_bias, self.error_bias, self.adjacencyList)
+        return "Node(index={}, region={}, neuron_size={}, connection_bias={}, error_bias={}, adjacencyList={})".format(self.index, self.region, self.neuron_size, self.connection_bias, self.error_bias, self.adjacency_list)
 
     def __str__(self):
         return "Node(index={}) -> {}".format(self.index, self.adjacency_list)
@@ -74,7 +74,7 @@ class GraphFromJson:
         s = 0
         adj_list = self.getAdjacencyList()
         for i in adj_list:
-            s += len(adj_list[i][self.mapper("adjacency_list")])
+            s += len(adj_list[i])
         return s
 
     def printAdjList(self):
@@ -82,16 +82,8 @@ class GraphFromJson:
             print(self.__getitem__(i))
 
     def toJson(self, fileName):
-
         with open(fileName, 'w') as f:
-            l = self._graph.tolist();
-            for i in range(len(l)):
-                l[i] = l[i].tolist()
-            for i in range(len(l[3])):
-                l[3][i] = l[3][i].tolist();
-
-            j = {'Graph' : l}
-            json.dump(j, f)
+            json.dump(self._graph, f)
 
     def __repr__(self):
         return "Graph(num_of_neurons={})\nTotal Edges: {}".format(self.num_of_neurons, self.getNumberOfEdges())
@@ -111,30 +103,30 @@ class Graph:
         self.max_connection_bias = max_connection_bias
         self.max_error = max_error
         self.max_adjacent = max_adjacent
-        self._graph = ng.genNeuronsV3(num_of_neurons, num_of_regions, max_connection_bias, max_error, max_adjacent)
+        self._graph = ng.genNeuronsV3(num_of_neurons, num_of_regions, max_neuron_size, max_connection_bias, max_error, max_adjacent)
 
     def __getitem__(self, key : int):
         # TODO gen neuron_size.
-        return Node(key, self._graph[0][key], (None), self._graph[1][key], self._graph[2][key], self._graph[3][key])
+        return Node(key, self._graph[0][key], self._graph[1][key], self._graph[2][key], self._graph[3][key], self._graph[4][key])
 
     def getAdjacencyListOf(self, key):
-        return self._graph[3][key]
+        return self._graph[4][key]
 
     def getErrorBiasOf(self, key):
-        return self._graph[2][key]
+        return self._graph[3][key]
 
     def getConnectionBiasOf(self, key):
-        return self._graph[1][key]
+        return self._graph[2][key]
 
     def getRegionOf(self, key):
         return self._graph[0][key]
 
     def getAdjacencyList(self):
-        return self._graph[3]
+        return self._graph[4]
 
     def getNumberOfEdges(self):
         s = 0
-        adj_list = self._graph[3]
+        adj_list = self._graph[4]
         for i in range(adj_list.size):
             s += len(adj_list[i])
         return s
@@ -149,14 +141,14 @@ class Graph:
             l = self._graph.tolist();
             for i in range(len(l)):
                 l[i] = l[i].tolist()
-            for i in range(len(l[3])):
-                l[3][i] = l[3][i].tolist();
+            for i in range(len(l[4])):
+                l[4][i] = l[4][i].tolist();
 
             j = {'Graph' : l}
             json.dump(j, f)
 
     def __repr__(self):
-        return "Graph(num_of_neurons={}, num_of_regions={}, max_connection_bias={}, max_error={}, max_adjacent={})\nTotal Edges: {}".format(self.num_of_neurons, self.num_of_regions, self.max_connection_bias, self.max_error, self.max_adjacent, self.getNumberOfEdges())
+        return "Graph(num_of_neurons={}, num_of_regions={}, max_neuron_size={}, max_connection_bias={}, max_error={}, max_adjacent={})\nTotal Edges: {}".format(self.num_of_neurons, self.num_of_regions, self.max_neuron_size, self.max_connection_bias, self.max_error, self.max_adjacent, self.getNumberOfEdges())
 
 
 class DNode:

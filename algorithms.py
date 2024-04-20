@@ -1,11 +1,11 @@
 import numpy as np
 import heapq
-from graph import Graph, DNode
+from graph import Graph, DNode, GraphFromJson
 
 def weightfunc(e1 : float, c1 : float, e2 : float, c2 : float):
     return (e1+e2)**2 + (c1*(1 - c2))
 
-def dijkstra(source : int, graph : Graph, weightfunc = weightfunc):
+def dijkstra(source : int, graph : Graph | GraphFromJson, weightfunc = weightfunc):
     """
     Computes shortest path from source to all reachable nodes.
 
@@ -15,6 +15,11 @@ def dijkstra(source : int, graph : Graph, weightfunc = weightfunc):
     where n is the index of the node.
 
     The second array represents the shortest distance from source to node n. 
+
+    source : int -> index of source node.
+
+    graph : Graph | GraphFromJson
+
     """
 
     nset = np.zeros(graph.num_of_neurons, dtype=bool)
