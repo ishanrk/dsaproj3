@@ -7,7 +7,10 @@ import pandas as pd
 from neuron_gen import genNeuronsV3
 import json
 
+import algorithms
+
 from hash import Hash
+import graph
 
 # get colors
 WHITE = (255, 255, 255)
@@ -23,6 +26,10 @@ RED=(255,0,0)
 
 BACK_IMAGE= pygame.image.load("brain2.png") # brain image as bg
 
+std_json = {"region" : "location", "neuron_size" : "neuron_size", "connection_bias" : "connection_bias", "error_bias" : "error", "adjacency_list" : "connections"}
+
+fe_to_std_json = {"region" : "location", "neuron_size" : "neuron_size", "connection_bias" : "connection_bias", "error_bias" : "error", "adjacency_list" : "connections"}
+
 
 # gets data from neuron_gen, saves a local copy
 def get_data():
@@ -37,7 +44,7 @@ def get_data():
         connections.append(connection.to_list())
 
     neuron_size = [random.randint(1,3) for x in range(100000)]
-    neurons_dataframe= pd.DataFrame({'index': indices, 'location':location,'connection_bias':connection_bias, 'error':error,'neruon_size':neuron_size})
+    neurons_dataframe= pd.DataFrame({'index': indices, 'location':location,'connection_bias':connection_bias, 'error':error,'neuron_size':neuron_size})
     neurons_dataframe.to_json('data.json')
 
 # get dijkstra's time
@@ -90,7 +97,7 @@ def generate_subset_neurons(subset_number):
     in_graph.add(first_neuron["index"])
 
     current_Subset_lenght = 1
-    random.seed(422) #random seed, hint:submission date!
+   
 
     # generates subset 
     while(current_Subset_lenght!=subset_number):
@@ -114,8 +121,20 @@ def generate_subset_neurons(subset_number):
                 x+=1     
                 new_neuron.connection_add(random_neuron)
         neuron_list[new_neuron.index] = new_neuron
-
+    
+    
     return neuron_list
+
+def neurons_to_graph(neurons):
+    temp_dict={}
+    for neuron in neurons.values():
+        temp_dict[neuron.index] = {"location":neuron.location, "error": neuron.error, "connection_bias":neuron.connection_bias, "neuron_size":neuron.neuron_size, "connections":neuron.connections}
+
+    with open("neuron_subset.json", "w") as write: 
+        json.dump(temp_dict, write)
+    new_graph = graph.GraphFromJson("neuron_subset.json",fe_to_std_json)
+
+    return new_graph
 
 def breadth_first_search(from_neuron, to_neuron, neurons, screen, bfs_button, generate_text2, num_neurons):
 
@@ -261,19 +280,21 @@ def close_connections(nodes):
         
         # get lowest 2 distances and then add them to connections
         distances.sort(key=lambda x: x[1])
-        for neighbor, _ in distances[:2]:
+        for neighbor, _ in distances[:5]:
             node.connections.append(neighbor)
 
 
 def raw_astar(from_neuron, to_neuron, neurons):
         
-        start_time= time.time_ns()
-        neuron_priority_q = [(0, from_neuron)]
+        fscore=((neurons[from_neuron].x_coord-neurons[to_neuron].x_coord)**2)+((neurons[from_neuron].y_coord-neurons[to_neuron].y_coord)**2)
+        neuron_priority_q = [(fscore, from_neuron)]
         heapq.heapify(neuron_priority_q)
 
             # dict to track visited nodes and their costs
         visited = {from_neuron: 0}
         parent = {}
+
+        
         
         while neuron_priority_q:
             
@@ -282,15 +303,12 @@ def raw_astar(from_neuron, to_neuron, neurons):
 
             if current_neuron == to_neuron:
                 
-                # Reconstruct path
+                # get path
                 path = []
-                
-                last_neuron=0
+
                 while current_neuron in parent:
                     
                     path.append(current_neuron)
-                    
-                    last_neuron=current_neuron
                     current_neuron = parent[current_neuron]      
                 path.append(from_neuron)
               
@@ -298,24 +316,25 @@ def raw_astar(from_neuron, to_neuron, neurons):
 
             for neighbor in neurons[current_neuron].connections:
                 
-                score = visited[current_neuron] + get_weight(neurons[current_neuron], neurons[neighbor])
-                if score < visited.get(neighbor, float('inf')):
+                gscore = visited[current_neuron] + get_weight(neurons[current_neuron], neurons[neighbor])
+                if gscore < visited.get(neighbor, float('inf')):
                     parent[neighbor] = current_neuron
-                    visited[neighbor] = score
-                    combined_heuristic_score = score + get_weight(neurons[neighbor], neurons[to_neuron])
-                    heapq.heappush(neuron_priority_q, (combined_heuristic_score, neighbor)) 
+                    visited[neighbor] = gscore
+                    fscore=gscore+ ((neurons[neighbor].x_coord-neurons[to_neuron].x_coord)**2)+((neurons[neighbor].y_coord-neurons[to_neuron].y_coord)**2)
+                    heapq.heappush(neuron_priority_q, (fscore, neighbor)) 
 
             
 # gets weight from connection bias, lower weight=lower speed to traverse
 def get_weight(a,b):
-    return 100*((1-a.connection_bias)*(1-b.connection_bias))
+    return ((a.connection_bias)*(1-b.connection_bias))+((a.error+b.error))**2
 
 
 # currently heurisitc is 0
-def astar(from_neuron, to_neuron, neurons, screen, astar_button, generate_text, num_neuron):
+def astar_visualize(from_neuron, to_neuron, neurons, screen, astar_button, generate_text, num_neuron):
 
     # gets nodes still in queue
-    neuron_priority_q = [(0, from_neuron)]
+    fscore=((neurons[from_neuron].x_coord-neurons[to_neuron].x_coord)**2)+((neurons[from_neuron].y_coord-neurons[to_neuron].y_coord)**2)
+    neuron_priority_q = [(fscore, from_neuron)]
     heapq.heapify(neuron_priority_q)
 
     # dict to track visited nodes and their costs
@@ -349,8 +368,9 @@ def astar(from_neuron, to_neuron, neurons, screen, astar_button, generate_text, 
                 path = []
                 
                 last_neuron=0
+                error_accumulate=0
                 while current_neuron in parent:
-                   
+                    error_accumulate+=get_weight(neurons[parent[current_neuron]],neurons[current_neuron])
                     path.append(current_neuron)
                     pygame.draw.circle(screen, RED, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), 10)
                     pygame.draw.line(screen, RED, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), (neurons[parent[current_neuron]].x_coord, neurons[parent[current_neuron]].y_coord), 5)
@@ -358,22 +378,24 @@ def astar(from_neuron, to_neuron, neurons, screen, astar_button, generate_text, 
                     last_neuron=current_neuron
                     current_neuron = parent[current_neuron]
                     time.sleep(1)
+                
                 pygame.draw.circle(screen, RED, (neurons[from_neuron].x_coord,neurons[from_neuron].y_coord), 10)
                 pygame.draw.line(screen, RED, (neurons[from_neuron].x_coord,neurons[from_neuron].y_coord), (neurons[path[::-1][0]].x_coord, neurons[path[::-1][0]].y_coord), 5)
                 pygame.display.flip()
                 time.sleep(5)
                 path.append(from_neuron)
                 
-                return path[::-1]
+                return path[::-1], error_accumulate
 
             for neighbor in neurons[current_neuron].connections:
                 pygame.draw.line(screen, GRAY, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), (neurons[neighbor].x_coord,neurons[neighbor].y_coord), 1)
-                score = visited[current_neuron] + 1
-                if score < visited.get(neighbor, float('inf')):
+                gscore = visited[current_neuron] + get_weight(neurons[neighbor],neurons[to_neuron])
+                if gscore < visited.get(neighbor, float('inf')):
                     parent[neighbor] = current_neuron
-                    visited[neighbor] = score
-                    combined_heuristic_score = score + get_weight(neurons[neighbor], neurons[to_neuron])
-                    heapq.heappush(neuron_priority_q, (combined_heuristic_score, neighbor)) 
+                    visited[neighbor] = gscore
+                    fscore=gscore+((neurons[from_neuron].x_coord-neurons[to_neuron].x_coord)**2)+((neurons[from_neuron].y_coord-neurons[to_neuron].y_coord)**2)
+
+                    heapq.heappush(neuron_priority_q, (fscore, neighbor)) 
             time.sleep(0.001)
             pygame.display.flip()
     else:
@@ -402,10 +424,10 @@ def astar(from_neuron, to_neuron, neurons, screen, astar_button, generate_text, 
             if current_neuron == to_neuron:
                 # Reconstruct path
                 path = []
-                
+                error_accumulate=0
                 last_neuron=0
                 while current_neuron in parent:
-                    
+                    error_accumulate+=get_weight(neurons[parent[current_neuron]],neurons[current_neuron])
                     path.append(current_neuron)
                     pygame.draw.circle(screen, GRAY, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), 8)
                     pygame.draw.line(screen, WHITE, (neurons[current_neuron].x_coord,neurons[current_neuron].y_coord), (neurons[parent[current_neuron]].x_coord, neurons[parent[current_neuron]].y_coord), 3)
@@ -419,17 +441,40 @@ def astar(from_neuron, to_neuron, neurons, screen, astar_button, generate_text, 
                 time.sleep(5)
                 path.append(from_neuron)
               
-                return path[::-1]
+                return path[::-1],error_accumulate
 
             for neighbor in neurons[current_neuron].connections:
                 
-                score = visited[current_neuron] + 1
-                if score < visited.get(neighbor, float('inf')):
+                gscore = visited[current_neuron] +  get_weight(neurons[neighbor], neurons[to_neuron])
+                if gscore < visited.get(neighbor, float('inf')):
                     parent[neighbor] = current_neuron
-                    visited[neighbor] = score
-                    combined_heuristic_score = score + get_weight(neurons[neighbor], neurons[to_neuron])
-                    heapq.heappush(neuron_priority_q, (combined_heuristic_score, neighbor)) 
-    
+                    visited[neighbor] = gscore
+                    fscore=gscore+((neurons[from_neuron].x_coord-neurons[to_neuron].x_coord)**2)+((neurons[from_neuron].y_coord-neurons[to_neuron].y_coord)**2)
+                    heapq.heappush(neuron_priority_q, (fscore, neighbor)) 
+
+def dijk_visualize(from_neuron, to_neuron, graphBuild, screen, neurons):
+    start_time=time.perf_counter_ns()
+    dijk_path = algorithms.getPathNonContinous(from_neuron,to_neuron, graphBuild)
+    end_time = time.perf_counter_ns()
+    error_accumulate=0
+    x=0
+    if(len(dijk_path)==1):
+        return [],0,0
+    while(x<len(dijk_path)-1):
+        error_accumulate+=get_weight(neurons[dijk_path[x]], neurons[dijk_path[x+1]])
+        pygame.draw.circle(screen, GRAY, (neurons[dijk_path[x]].x_coord,neurons[dijk_path[x]].y_coord), 8)
+        pygame.draw.circle(screen, GRAY, (neurons[dijk_path[x+1]].x_coord,neurons[dijk_path[x+1]].y_coord), 8)
+        
+        pygame.draw.line(screen, WHITE, (neurons[dijk_path[x+1]].x_coord,neurons[dijk_path[x+1]].y_coord),(neurons[dijk_path[x]].x_coord,neurons[dijk_path[x]].y_coord), 3)
+        pygame.display.flip()
+        time.sleep(0.01)
+        x+=1
+   
+    time.sleep(3)
+
+    return dijk_path, end_time-start_time, error_accumulate
+
+
 
 def main():
     num_neurons = int(input("Enter number of neurons: "))
@@ -493,6 +538,8 @@ def main():
     if(num_neurons<5000):
         close_connections(neurons)
 
+    new_graph = neurons_to_graph(neurons)
+
     for neuron in neurons.values():
         pos_dict[neuron.index] = (neuron.x_coord,neuron.y_coord)
     
@@ -508,6 +555,7 @@ def main():
     bfs_chosen=False
     edge_display=False
     name_func=False
+    djik_chosen=False
 
     astar_button = pygame.Rect(50, 50, 100 , 70)
     generate_text = font.render("A Star", True, WHITE)
@@ -520,6 +568,9 @@ def main():
 
     name_button = pygame.Rect(900, 150, 100 , 70)
     generate_text4 = font.render("Enter Name", True, BLACK)
+
+    djik_button = pygame.Rect(150, 50, 100 , 70)
+    generate_text5 = font.render("Djikstra", True, WHITE)
     
     brain_text = font2.render("Brain Interface", True, WHITE)
     
@@ -544,6 +595,9 @@ def main():
         pygame.draw.rect(screen, YELLOW, name_button)
         screen.blit(generate_text4, (905, 175))
 
+        pygame.draw.rect(screen, GRAY, djik_button)
+        screen.blit(generate_text5, (175, 80))
+
         for event in pygame.event.get():
             mouse_pos = pygame.mouse.get_pos()
             if event.type == pygame.QUIT:
@@ -554,6 +608,8 @@ def main():
                 bfs_chosen=True
             if event.type == pygame.MOUSEBUTTONDOWN and name_button.collidepoint(mouse_pos):
                 name_func=True
+            if event.type == pygame.MOUSEBUTTONDOWN and djik_button.collidepoint(mouse_pos) and from_neuron!=None and to_neuron!=None:
+                djik_chosen=True
             if event.type == pygame.MOUSEBUTTONDOWN and edge_button.collidepoint(mouse_pos):
                 if edge_display: 
                     edge_display=False
@@ -582,18 +638,20 @@ def main():
             
 
         if astar_chosen:
-            path=astar(from_neuron,to_neuron,neurons,screen, astar_button, generate_text,num_neurons)
+            path,error_astar=astar_visualize(from_neuron,to_neuron,neurons,screen, astar_button, generate_text,num_neurons)
             
             time.sleep(2)
             neurons[from_neuron].selected=False
             neurons[to_neuron].selected=False
+            
+            start_time = time.perf_counter_ns()
+            raw_astar(from_neuron,to_neuron,neurons)
+            end_time= time.perf_counter_ns()
             from_neuron=None
             to_neuron=None
-            start_time = time.time_ns()
-            raw_astar(from_neuron,to_neuron,neurons)
-            end_time= time.time_ns()
-
+            print("A STAR PATH: ",path)
             print("TIME TAKEN FOR A STAR IN NANOSECONDS: ", end_time-start_time)
+            print("Error accumulated A star: ",error_astar)
             astar_chosen=False
             continue
         if bfs_chosen:
@@ -601,11 +659,14 @@ def main():
             time.sleep(2)
             neurons[from_neuron].selected=False
             neurons[to_neuron].selected=False
-            from_neuron=None
-            to_neuron=None
+            
             
             bfs_chosen=False
+            from_neuron=None
+            to_neuron=None
+            print("PATH TAKEN BY BFS IS: ", path)
             continue
+        
             
         for neuron in neurons.values():
             
@@ -627,8 +688,6 @@ def main():
                         pygame.draw.line(screen, WHITE, (neuron.x_coord,neuron.y_coord), (neurons[connection].x_coord, neurons[connection].y_coord), 1)
 
         if name_func:
-            
-
             currentHasher = Hash(num_neurons)  #hash obj for the sentence
             currentHasher.hash(sentence)
 
@@ -670,7 +729,19 @@ def main():
            
             name_func=False
             continue
+        if djik_chosen:
+            path,time_taken,error_djik = dijk_visualize(from_neuron,to_neuron,new_graph,screen,neurons)
 
+            print("Djikstra's shortest path: ", path)
+            print("Time taken in nanoseconds: ", time_taken)
+            print("Error Accumulated: ", error_djik)
+            neurons[from_neuron].selected=False
+            neurons[to_neuron].selected=False
+            djik_chosen=False
+            from_neuron=None
+            to_neuron=None
+            
+            continue
             
         
         pygame.display.flip()
@@ -683,3 +754,7 @@ def main():
 #run
 if __name__ == "__main__":
     main()
+
+
+
+
