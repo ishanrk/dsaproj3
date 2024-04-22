@@ -620,7 +620,7 @@ def main():
             from_neuron=None
             to_neuron=None
             print("PATH TAKEN BY BFS IS: ", path)
-            print("TIME TAKEN BY BFS IS: ", end_time-start_time)
+            print("TIME TAKEN BY BFS IN NANOSECONDS: ", end_time-start_time)
             print("Error Accumulated by BFS is: ", error_acc)
             continue
         
