@@ -65,7 +65,7 @@ class Neuron:
 # randomly samples subset_number of neurons from total dataset
 def generate_subset_neurons(subset_number):
     # read data
-    neuron_dataframe = pd.read_json('data.json')
+    neuron_dataframe = pd.read_json('neuron_data.json')
     neurons = [get_neuron_row(row) for _, row in neuron_dataframe.iterrows()]
 
     # uses set to store subset neurons
